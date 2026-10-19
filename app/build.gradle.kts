@@ -17,10 +17,29 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 只打包 arm64-v8a
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+    }
+
+    // 签名信息从环境变量读取（GitHub Actions 里由 Secrets 注入），不写进仓库
+    val ksFile = System.getenv("KEYSTORE_FILE")
+    signingConfigs {
+        if (ksFile != null) {
+            create("release") {
+                storeFile = file(ksFile)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (ksFile != null) signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
